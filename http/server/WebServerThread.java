@@ -7,6 +7,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.FileTime;
+import java.nio.*;
+import java.awt.image.BufferedImage;
+import javax.imageio.*;
 
 public class WebServerThread extends Thread {
     Socket remote;
@@ -23,21 +26,12 @@ public class WebServerThread extends Thread {
             BufferedReader in = new BufferedReader(new InputStreamReader(remote.getInputStream()));
             PrintWriter out = new PrintWriter(remote.getOutputStream());
 
-            // read the data sent. We basically ignore it,
-            // stop reading once a blank line is hit. This
-            // blank line signals the end of the client HTTP
-            // headers.
-            String str = ".";
-            /*
-             * while (str != null && !str.equals("")) { str = in.readLine();
-             * System.out.println(str); }
-             */
+           
 
             // Lecture de la requête
-            str = in.readLine();
+            String str = in.readLine();
             if (str != null) {
                 String[] request = str.split(" ");
-                System.out.println(str);
                 String requestType = request[0];
 
                 switch (requestType) {
@@ -71,15 +65,15 @@ public class WebServerThread extends Thread {
                         // Lecture du header
                         while (str != null && !str.equals("")) {
                             str = in.readLine();
-                        }
-
-                        str = ".";
+                            System.out.println(str);
+                        }                        
                         String body = "";
                         // Lecture du contenu de la requête, BIEN METTRE UN RETOUR A LA LIGNE APRES LA
                         // BALISE FERMANTE
-                        while (str != null && !str.equals("</html>")) {
-                            str = in.readLine();
+                        str = ".";
+                        while (str != null && !str.equals("\\EOF")) {
                             System.out.println(str);
+                            str = in.readLine();
                             if (body.equals("")) {
                                 body = str;
                             } else {
@@ -99,7 +93,10 @@ public class WebServerThread extends Thread {
                             filename = (request[1].split("/"))[1];
                         }
 
-                        // Lecture du header
+                        // read the data sent. We basically ignore it,
+                        // stop reading once a blank line is hit. This
+                        // blank line signals the end of the client HTTP
+                        // headers.
                         while (str != null && !str.equals("")) {
                             str = in.readLine();
                         }
@@ -187,11 +184,8 @@ public class WebServerThread extends Thread {
     public void getRequest(PrintWriter out, String pageName) {
 
         System.out.println(pageName);
-
         String extension = (pageName.split("\\."))[1];
-
         System.out.println(extension);
-
         switch (extension) {
 
             case "html":
@@ -224,7 +218,7 @@ public class WebServerThread extends Thread {
                 // Send the response
                 // Send the headers
                 out.println("HTTP/1.0 200 OK");
-                out.println("Content-Type: text/html");
+                out.println("Content-Type: text/plain");
                 out.println("Server: Bot");
                 // this blank line signals the end of the headers
                 out.println("");
@@ -239,6 +233,44 @@ public class WebServerThread extends Thread {
                 }
                 out.flush();
 
+                break;
+
+            case "jpg":
+
+                System.out.println("fichier html");
+                // Send the first part of the header
+                out.println("HTTP/1.0 200 OK");
+                out.println("Content-Type:image/jpg");
+                out.println("Server: Bot");
+                // Convert jpg
+                // byte[] size;
+                try
+                {
+                    /*
+                    BufferedImage image = ImageIO.read(new File("http\\server\\"+pageName));
+                    ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+                    ImageIO.write(image, "jpg", byteArrayOutputStream);
+                    */
+
+                    //size = ByteBuffer.allocate(4).putInt(byteArrayOutputStream.size()).array();
+
+                    // Test d'une autre méthode
+                    String image = readFile("http\\server\\" + pageName);
+                    out.println("Content-length:"+image.length());
+                    out.println("");
+                    //out.println(byteArrayOutputStream.toByteArray());
+
+                    // Quel format ?
+                    out.println(image);
+
+                    out.flush();
+                }
+                catch(Exception e)
+                {
+                    System.out.println("Exception in jpg GET : " + e);
+                }
+                
+               
                 break;
 
             default:
