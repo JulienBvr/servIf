@@ -181,7 +181,7 @@ public class WebServerThread extends Thread {
         }
     }
 
-    public void getRequest(PrintWriter out, String pageName) {
+    public void getRequest(PrintWriter out, String pageName) throws IOException {
 
         System.out.println(pageName);
         String extension = (pageName.split("\\."))[1];
@@ -236,34 +236,24 @@ public class WebServerThread extends Thread {
                 break;
 
             case "jpg":
-
-                System.out.println("fichier html");
-                // Send the first part of the header
-                out.println("HTTP/1.0 200 OK");
-                out.println("Content-Type:image/jpg");
-                out.println("Server: Bot");
-                // Convert jpg
-                // byte[] size;
                 try
-                {
-                    /*
-                    BufferedImage image = ImageIO.read(new File("http\\server\\"+pageName));
-                    ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-                    ImageIO.write(image, "jpg", byteArrayOutputStream);
-                    */
+                {    
+                    BufferedOutputStream out2 = new BufferedOutputStream(remote.getOutputStream());
+                    System.out.println("fichier jpg");
 
-                    //size = ByteBuffer.allocate(4).putInt(byteArrayOutputStream.size()).array();
+                    File file = new File("http\\server\\" + pageName);
+                    FileInputStream imageFile = new FileInputStream(file);
+                    byte[] imageData = new byte[(int)file.length()];
+                    imageFile.read(imageData);
+                    imageFile.close();
+                    String Header = "HTTP/1.0 200 OK\r\ncontent-length:"+file.length()+"\r\ncontent-type: image/jpg\r\nServer:Bot\r\n\r\n";
+                    // ImageInFile classe
+                    //Filebyte[] imgArray = Files.readAllBytes(imageFile.toPath());
+                    // Send the first part of the header
+                    out2.write(Header.getBytes());
+                    out2.write(imageData);
 
-                    // Test d'une autre méthode
-                    String image = readFile("http\\server\\" + pageName);
-                    out.println("Content-length:"+image.length());
-                    out.println("");
-                    //out.println(byteArrayOutputStream.toByteArray());
-
-                    // Quel format ?
-                    out.println(image);
-
-                    out.flush();
+                    out2.flush();
                 }
                 catch(Exception e)
                 {
