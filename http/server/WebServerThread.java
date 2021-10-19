@@ -185,23 +185,87 @@ public class WebServerThread extends Thread {
     }
 
     public void getRequest(PrintWriter out, String pageName) {
-        // Send the response
-        // Send the headers
-        out.println("HTTP/1.0 200 OK");
-        out.println("Content-Type: text/html");
-        out.println("Server: Bot");
-        // this blank line signals the end of the headers
-        out.println("");
 
-        // Send the HTML page
+        System.out.println(pageName);
 
-        String pageToReturn = readFile("http\\server\\" + pageName);
-        if (pageToReturn.equals("")) {
-            out.println("File " + pageName + " could not be opened");
-        } else {
-            out.println(pageToReturn);
+        String extension = (pageName.split("\\."))[1];
+
+        System.out.println(extension);
+
+        switch (extension) {
+
+            case "html":
+
+                System.out.println("fichier html");
+
+                // Send the response
+                // Send the headers
+                out.println("HTTP/1.0 200 OK");
+                out.println("Content-Type: text/html");
+                out.println("Server: Bot");
+                // this blank line signals the end of the headers
+                out.println("");
+
+                // Send the HTML page
+
+                String pageToReturn = readFile("http\\server\\" + pageName);
+                if (pageToReturn.equals("")) {
+                    out.println("File " + pageName + " could not be opened");
+                } else {
+                    out.println(pageToReturn);
+                }
+                out.flush();
+                break;
+
+            case "txt":
+
+                System.out.println("fichier txt");
+
+                // Send the response
+                // Send the headers
+                out.println("HTTP/1.0 200 OK");
+                out.println("Content-Type: text/html");
+                out.println("Server: Bot");
+                // this blank line signals the end of the headers
+                out.println("");
+
+                // Send the HTML page
+
+                pageToReturn = readFile("http\\server\\" + pageName);
+                if (pageToReturn.equals("")) {
+                    out.println("File " + pageName + " could not be opened");
+                } else {
+                    out.println(pageToReturn);
+                }
+                out.flush();
+
+                break;
+
+            default:
+
+                System.out.println("fichier jpeg");
+
+                // Send the response
+                // Send the headers
+                out.println("HTTP/1.0 200 OK");
+                out.println("Content-Type: image/jpeg");
+                out.println("Server: Bot");
+                // this blank line signals the end of the headers
+                out.println("");
+
+                // Send the HTML page
+
+                pageToReturn = readFile("http\\server\\" + pageName);
+                if (pageToReturn.equals("")) {
+                    out.println("File " + pageName + " could not be opened");
+                } else {
+                    out.println(pageToReturn);
+                }
+                out.flush();
+
+                break;
+
         }
-        out.flush();
     }
 
     public void postRequest(PrintWriter out, String msg, String filename) throws IOException {
