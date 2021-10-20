@@ -18,15 +18,16 @@ public class WebServerThread extends Thread {
         this.remote = r;
     }
 
-    public void run() {
+    public void run(){
         try {
             // remote is now the connected socket
             System.out.println("Connection, sending data.");
 
             BufferedReader in = new BufferedReader(new InputStreamReader(remote.getInputStream()));
             PrintWriter out = new PrintWriter(remote.getOutputStream());
+            BufferedOutputStream out2 = new BufferedOutputStream(remote.getOutputStream());
 
-           
+            String body = "";
 
             // Lecture de la requête
             String str = in.readLine();
@@ -57,32 +58,33 @@ public class WebServerThread extends Thread {
 
                         String filename;
                         if (request[1].equals("/")) {
-                            filename = "ErrorsPages\\NoPostPage.html";
+                            String Header = "HTTP/1.0 404 NOT FOUND\r\ncontent-type: text/plain\r\nServer:Bot\r\n\r\n";
+                            out2.write(Header.getBytes());
+                            out2.flush();
                         } else {
                             filename = (request[1].split("/"))[1];
-                        }
-
-                        // Lecture du header
-                        while (str != null && !str.equals("")) {
-                            str = in.readLine();
-                            System.out.println(str);
-                        }                        
-                        String body = "";
-                        // Lecture du contenu de la requête, BIEN METTRE UN RETOUR A LA LIGNE APRES LA
-                        // BALISE FERMANTE
-                        str = ".";
-                        while (str != null && !str.equals("\\EOF")) {
-                            System.out.println(str);
-                            str = in.readLine();
-                            if (body.equals("")) {
-                                body = str;
-                            } else {
-                                body += "\n" + str;
+                            // Lecture du header
+                            while (str != null && !str.equals("")) {
+                                str = in.readLine();
+                                System.out.println(str);
+                            }                        
+                            body = "";
+                            // Lecture du contenu de la requête, BIEN METTRE UN RETOUR A LA LIGNE APRES LA
+                            // BALISE FERMANTE
+                            str = ".";
+                            while (str != null && !str.equals("\\EOF")) {
+                                System.out.println(str);
+                                str = in.readLine();
+                                if (body.equals("")) {
+                                    body = str;
+                                } else {
+                                    body += "\n" + str;
+                                }
                             }
-
+                            postRequest(out, body, filename);
                         }
 
-                        postRequest(out, body, filename);
+                        
                         break;
 
                     case "PUT":
@@ -149,6 +151,9 @@ public class WebServerThread extends Thread {
 
                     default:
                         System.out.println("Unknown request received");
+                        out.println("HTTP/1.0 400 BAD REQUEST");
+                        out.println("Content-Type: text/plain");
+                        out.println("Server: Bot");
                         break;
                 }
             }
@@ -186,8 +191,11 @@ public class WebServerThread extends Thread {
         System.out.println(pageName);
         String extension = (pageName.split("\\."))[1];
         System.out.println(extension);
-        switch (extension) {
 
+        BufferedOutputStream out2 = new BufferedOutputStream(remote.getOutputStream());
+
+        switch (extension) {
+            
             case "html":
 
                 System.out.println("fichier html");
@@ -205,6 +213,9 @@ public class WebServerThread extends Thread {
                 String pageToReturn = readFile("http\\server\\" + pageName);
                 if (pageToReturn.equals("")) {
                     out.println("File " + pageName + " could not be opened");
+                    String Header = "HTTP/1.0 404 NOT FOUND\r\ncontent-type: text/plain\r\nServer:Bot\r\n\r\n";
+                    out2.write(Header.getBytes());
+                    out2.flush();
                 } else {
                     out.println(pageToReturn);
                 }
@@ -228,6 +239,9 @@ public class WebServerThread extends Thread {
                 pageToReturn = readFile("http\\server\\" + pageName);
                 if (pageToReturn.equals("")) {
                     out.println("File " + pageName + " could not be opened");
+                    String Header = "HTTP/1.0 404 NOT FOUND\r\ncontent-type: text/plain\r\nServer:Bot\r\n\r\n";
+                    out2.write(Header.getBytes());
+                    out2.flush();
                 } else {
                     out.println(pageToReturn);
                 }
@@ -238,7 +252,6 @@ public class WebServerThread extends Thread {
             case "jpg":
                 try
                 {    
-                    BufferedOutputStream out2 = new BufferedOutputStream(remote.getOutputStream());
                     System.out.println("fichier jpg");
 
                     File file = new File("http\\server\\" + pageName);
@@ -247,9 +260,6 @@ public class WebServerThread extends Thread {
                     imageFile.read(imageData);
                     imageFile.close();
                     String Header = "HTTP/1.0 200 OK\r\ncontent-length:"+file.length()+"\r\ncontent-type: image/jpg\r\nServer:Bot\r\n\r\n";
-                    // ImageInFile classe
-                    //Filebyte[] imgArray = Files.readAllBytes(imageFile.toPath());
-                    // Send the first part of the header
                     out2.write(Header.getBytes());
                     out2.write(imageData);
 
@@ -258,32 +268,100 @@ public class WebServerThread extends Thread {
                 catch(Exception e)
                 {
                     System.out.println("Exception in jpg GET : " + e);
+                    String Header = "HTTP/1.0 404 NOT FOUND\r\ncontent-type: text/plain\r\nServer:Bot\r\n\r\n";
+                    out2.write(Header.getBytes());
+                    out2.flush();
                 }
-                
-               
+                break;
+
+            case "svg":
+                try
+                {    
+                    System.out.println("fichier svg");
+
+                    File file = new File("http\\server\\" + pageName);
+                    FileInputStream imageFile = new FileInputStream(file);
+                    byte[] imageData = new byte[(int)file.length()];
+                    imageFile.read(imageData);
+                    imageFile.close();
+                    String Header = "HTTP/1.0 200 OK\r\ncontent-length:"+file.length()+"\r\ncontent-type: image/svg+xml\r\nServer:Bot\r\n\r\n";
+                    out2.write(Header.getBytes());
+                    out2.write(imageData);
+
+                    out2.flush();
+                }
+                catch(Exception e)
+                {
+                    System.out.println("Exception in jpg GET : " + e);
+                    String Header = "HTTP/1.0 404 NOT FOUND\r\ncontent-type: text/plain\r\nServer:Bot\r\n\r\n";
+                    out2.write(Header.getBytes());
+                    out2.flush();
+                }
+                break;
+
+            case "mp3":
+                try
+                {    
+                    System.out.println("fichier mp3");
+
+                    File file = new File("http\\server\\" + pageName);
+                    FileInputStream songFile = new FileInputStream(file);
+                    byte[] imageData = new byte[(int)file.length()];
+                    songFile.read(imageData);
+                    songFile.close();
+                    String Header = "HTTP/1.0 200 OK\r\ncontent-length:"+file.length()+"\r\ncontent-type: audio/mpeg\r\nServer:Bot\r\n\r\n";
+                    out2.write(Header.getBytes());
+                    out2.write(imageData);
+
+                    out2.flush();
+                }
+                catch(Exception e)
+                {
+                    System.out.println("Exception in mp3 GET : " + e);
+                    String Header = "HTTP/1.0 404 NOT FOUND\r\ncontent-type: text/plain\r\nServer:Bot\r\n\r\n";
+                    out2.write(Header.getBytes());
+                    out2.flush();
+                }
+                break;
+
+            case "mp4":
+                try
+                {    
+                    System.out.println("fichier mp4");
+
+                    File file = new File("http\\server\\" + pageName);
+                    FileInputStream songFile = new FileInputStream(file);
+                    byte[] imageData = new byte[(int)file.length()];
+                    songFile.read(imageData);
+                    songFile.close();
+                    String Header = "HTTP/1.0 200 OK\r\ncontent-length:"+file.length()+"\r\ncontent-type: video/mp4\r\nServer:Bot\r\n\r\n";
+                    out2.write(Header.getBytes());
+                    out2.write(imageData);
+
+                    out2.flush();
+                }
+                catch(Exception e)
+                {
+                    System.out.println("Exception in mp4 GET : " + e);
+                    String Header = "HTTP/1.0 404 NOT FOUND\r\ncontent-type: text/plain\r\nServer:Bot\r\n\r\n";
+                    out2.write(Header.getBytes());
+                    out2.flush();
+                }
                 break;
 
             default:
 
-                System.out.println("fichier jpeg");
-
-                // Send the response
-                // Send the headers
-                out.println("HTTP/1.0 200 OK");
-                out.println("Content-Type: image/jpeg");
-                out.println("Server: Bot");
-                // this blank line signals the end of the headers
-                out.println("");
-
-                // Send the HTML page
-
-                pageToReturn = readFile("http\\server\\" + pageName);
-                if (pageToReturn.equals("")) {
-                    out.println("File " + pageName + " could not be opened");
-                } else {
-                    out.println(pageToReturn);
+            try
+            {    
+                System.out.println("fichier non reconnu");
+                String Header = "HTTP/1.0 404 NOT FOUND\r\ncontent-type: text/plain\r\nServer:Bot\r\n\r\n";
+                out2.write(Header.getBytes());
+                out2.flush();
                 }
-                out.flush();
+                catch(Exception e)
+                {
+                    System.out.println("Exception in mp4 GET : " + e);
+                }
 
                 break;
 
@@ -298,36 +376,38 @@ public class WebServerThread extends Thread {
         Files.write(path, msg.getBytes(), StandardOpenOption.APPEND);
         String fullDoc = Files.readString(path);
 
-        // Send the response
-        // Send the headers
-        out.println("HTTP/1.0 200 OK");
-        out.println("Content-Type: text/html");
-        out.println("Server: Bot");
-        // this blank line signals the end of the headers
-        out.println("");
+            // Send the response
+            // Send the headers
+            out.println("HTTP/1.0 200 OK");
+            out.println("Content-Type: text/html");
+            out.println("Server: Bot");
+            // this blank line signals the end of the headers
+            out.println("");
 
-        out.println(fullDoc);
-        out.flush();
+            out.println(fullDoc);
+            out.flush();
+
     }
 
     public void putRequest(PrintWriter out, String msg, String filename) throws IOException {
 
         // Mise à jour du fichier à PUT
         Path path = FileSystems.getDefault().getPath("http/server/" + filename);
-
+        
         Files.write(path, msg.getBytes());
         String fullDoc = Files.readString(path);
 
-        // Send the response
-        // Send the headers
-        out.println("HTTP/1.0 200 OK");
-        out.println("Content-Type: text/html");
-        out.println("Server: Bot");
-        // this blank line signals the end of the headers
-        out.println("");
+            // Send the response
+            // Send the headers
+            out.println("HTTP/1.0 200 OK");
+            out.println("Content-Type: text/html");
+            out.println("Server: Bot");
+            // this blank line signals the end of the headers
+            out.println("");
 
-        out.println(fullDoc);
-        out.flush();
+            out.println(fullDoc);
+            out.flush();
+
     }
 
     public void deleteRequest(PrintWriter out, String filename) throws IOException {
@@ -339,15 +419,94 @@ public class WebServerThread extends Thread {
         else
             confirmation = "Supression du fichier echoue : " + filename;
         // Send the response
-        // Send the headers
-        out.println("HTTP/1.0 200 OK");
-        out.println("Content-Type: text/html");
-        out.println("Server: Bot");
-        // this blank line signals the end of the headers
-        out.println("");
 
-        out.println(confirmation);
-        out.flush();
+        System.out.println(filename);
+        String extension = (filename.split("\\."))[1];
+        System.out.println(extension);
+
+        switch (extension) {
+        
+            case "http" :
+                // Send the headers
+                out.println("HTTP/1.0 200 OK");
+                out.println("Content-Type: text/html");
+                out.println("Server: Bot");
+                // this blank line signals the end of the headers
+                out.println("");
+
+                out.println(confirmation);
+                out.flush();
+                break;
+
+            case "txt" :
+                // Send the headers
+                out.println("HTTP/1.0 200 OK");
+                out.println("Content-Type: text/plain");
+                out.println("Server: Bot");
+                // this blank line signals the end of the headers
+                out.println("");
+
+                out.println(confirmation);
+                out.flush();
+                break;
+            
+            case "jpg" :
+                // Send the headers
+                out.println("HTTP/1.0 200 OK");
+                out.println("Content-Type: image/jpg");
+                out.println("Server: Bot");
+                // this blank line signals the end of the headers
+                out.println("");
+
+                out.println(confirmation);
+                out.flush();
+                break;
+            
+            case "jpeg" :
+                // Send the headers
+                out.println("HTTP/1.0 200 OK");
+                out.println("Content-Type: image/jpeg");
+                out.println("Server: Bot");
+                // this blank line signals the end of the headers
+                out.println("");
+
+                out.println(confirmation);
+                out.flush();
+                break;
+
+            case "mp3" :
+                // Send the headers
+                out.println("HTTP/1.0 200 OK");
+                out.println("Content-Type: audio/mpeg");
+                out.println("Server: Bot");
+                // this blank line signals the end of the headers
+                out.println("");
+
+                out.println(confirmation);
+                out.flush();
+                break;
+
+            case "svg" :
+                // Send the headers
+                out.println("HTTP/1.0 200 OK");
+                out.println("Content-Type: svg/xml");
+                out.println("Server: Bot");
+                // this blank line signals the end of the headers
+                out.println("");
+
+                out.println(confirmation);
+                out.flush();
+                break;
+
+            default:
+
+                out.println("Extension non reconnu");
+                out.println("HTTP/1.0 404 NOT FOUND");
+                out.println("Content-Type: text/plain");
+                out.println("Server: Bot");
+
+                break;
+        }
     }
 
     public void headRequest(PrintWriter out, String headers, String pageName) throws IOException {
