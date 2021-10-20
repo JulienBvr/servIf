@@ -154,6 +154,8 @@ public class WebServerThread extends Thread {
                         out.println("HTTP/1.0 400 BAD REQUEST");
                         out.println("Content-Type: text/plain");
                         out.println("Server: Bot");
+                        out.println("");
+                        out.flush();
                         break;
                 }
             }
